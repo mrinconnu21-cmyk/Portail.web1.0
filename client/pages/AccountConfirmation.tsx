@@ -1,9 +1,9 @@
 import { useState, useRef } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import QRCode from "qrcode";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { generateMemberId } from "../lib/memberIdGenerator";
+import { generateQRCodeImage } from "../lib/qrCodeGenerator";
 import { PdfDocument } from "@/components/PdfDocument";
 import Header from "@/components/Header";
 
@@ -59,33 +59,51 @@ export default function AccountConfirmation() {
   const generatePDF = async () => {
     setGenerating(true);
     try {
-      // Prepare additional phones
-      const additionalPhones = ["+212 675-202336", "+212 646-610766"];
+      // Step 1: Generate QR code first
+      let qrCodeDataUrl = "";
+      try {
+        qrCodeDataUrl = await generateQRCodeImage({
+          firstName: registrationData.firstName || "",
+          lastName: registrationData.lastName || "",
+          memberId,
+          userId,
+          userPhone: registrationData.userPhone,
+          guardianFirstName: registrationData.guardianFirstName,
+          guardianLastName: registrationData.guardianLastName,
+          guardianPhone: registrationData.guardianPhone,
+          homePhone: registrationData.homePhone,
+          additionalPhones: ["+212 675-202336", "+212 646-610766"],
+        });
+        setQrCode(qrCodeDataUrl);
+      } catch (qrError) {
+        console.error("Erreur lors de la génération du code QR:", qrError);
+        alert("Erreur lors de la génération du code QR");
+        setGenerating(false);
+        return;
+      }
 
-      // Show PDF element temporarily for capture
+      // Step 2: Show PDF with QR code and wait for render
       if (pdfRef.current) {
         pdfRef.current.style.display = "block";
         pdfRef.current.style.position = "absolute";
         pdfRef.current.style.left = "-9999px";
-        pdfRef.current.style.width = "794px"; // A4 width at 96 DPI
+        pdfRef.current.style.width = "794px";
       }
 
-      // Wait for rendering
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 800));
 
-      // Capture the PDF document with html2canvas
+      // Step 3: Capture and generate PDF
       if (pdfRef.current) {
         const canvas = await html2canvas(pdfRef.current, {
           scale: 2,
           logging: false,
           useCORS: true,
           backgroundColor: "#ffffff",
-          windowWidth: 794, // A4 width in pixels at 96 DPI
-          windowHeight: 1123, // A4 height in pixels at 96 DPI
+          windowWidth: 794,
+          windowHeight: 1123,
           imageTimeout: 0,
         });
 
-        // Generate PDF from captured image
         const doc = new jsPDF({
           format: "a4",
           orientation: "portrait",
@@ -96,45 +114,10 @@ export default function AccountConfirmation() {
         const pageHeight = doc.internal.pageSize.getHeight();
 
         doc.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
-
-        // Get PDF as data URL
         const pdfData = doc.output("dataurlstring");
         setPdfUrl(pdfData);
 
-        // Generate QR code with enriched data
-        let qrCodeDataUrl = "";
-        try {
-          const qrValue = [
-            `${registrationData.firstName} ${registrationData.lastName}`,
-            `ID: ${memberId}`,
-            `UID: ${userId}`,
-            registrationData.guardianFirstName && registrationData.guardianLastName
-              ? `${registrationData.guardianFirstName} ${registrationData.guardianLastName}`
-              : "",
-            registrationData.guardianPhone ? `T: ${registrationData.guardianPhone}` : "",
-            registrationData.homePhone ? `H: ${registrationData.homePhone}` : "",
-            registrationData.userPhone ? `P: ${registrationData.userPhone}` : "",
-            ...additionalPhones,
-          ]
-            .filter(Boolean)
-            .join(" | ");
-
-          qrCodeDataUrl = await QRCode.toDataURL(qrValue, {
-            errorCorrectionLevel: "H",
-            type: "image/png",
-            width: 250,
-            margin: 2,
-            color: {
-              dark: "#000000",
-              light: "#FFFFFF",
-            },
-          });
-          setQrCode(qrCodeDataUrl);
-        } catch (qrError) {
-          console.error("Error generating QR code:", qrError);
-        }
-
-        // Save PDF and QR code to Supabase
+        // Step 4: Save to Supabase
         try {
           await fetch("/api/auth/save-documents", {
             method: "POST",
@@ -147,10 +130,10 @@ export default function AccountConfirmation() {
             }),
           });
         } catch (saveError) {
-          console.error("Error saving documents to Supabase:", saveError);
+          console.error("Erreur lors de l'enregistrement dans Supabase:", saveError);
         }
 
-        // Hide PDF element after capture
+        // Hide PDF element
         if (pdfRef.current) {
           pdfRef.current.style.display = "none";
         }
@@ -158,8 +141,8 @@ export default function AccountConfirmation() {
         setPdfGenerated(true);
       }
     } catch (error) {
-      console.error("Error generating PDF:", error);
-      alert("حدث خطأ أثناء إنشاء PDF");
+      console.error("Erreur lors de la génération du PDF:", error);
+      alert("Erreur lors de la génération du PDF. Veuillez réessayer.");
     } finally {
       setGenerating(false);
     }
@@ -167,7 +150,7 @@ export default function AccountConfirmation() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert("تم النسخ!");
+    alert("Copié!");
   };
 
   return (
@@ -193,6 +176,7 @@ export default function AccountConfirmation() {
           homePhone={registrationData.homePhone}
           guardianRelationship={registrationData.guardianRelationship}
           additionalPhones={["+212 675-202336", "+212 646-610766"]}
+          qrCodeImageUrl={qrCode}
         />
       </div>
 
@@ -213,7 +197,7 @@ export default function AccountConfirmation() {
           className="bg-white rounded-lg shadow-lg p-8 mb-8"
           style={{ borderRight: "4px solid #dc2626" }}
         >
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">معلومات حسابك</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Informations de Compte / معلومات حسابك</h2>
 
           {/* Member ID - Prominent */}
           <div
@@ -224,9 +208,9 @@ export default function AccountConfirmation() {
             }}
           >
             <p className="text-gray-600 text-sm mb-2">
-              رقم العضو الخاص بك
+              Votre Numéro Membre / رقم العضو الخاص بك
               <span className="block text-xs text-gray-500 mt-1">
-                {memberId.startsWith("E") ? "(ذكر)" : memberId.startsWith("F") ? "(أنثى)" : ""}
+                {memberId.startsWith("E") ? "(Masculin/ذكر)" : memberId.startsWith("F") ? "(Féminin/أنثى)" : ""}
               </span>
             </p>
             <div className="flex items-center justify-between">
@@ -243,14 +227,14 @@ export default function AccountConfirmation() {
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#991b1b")}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}
               >
-                نسخ
+                Copier
               </button>
             </div>
           </div>
 
           {/* User ID */}
           <div className="bg-gray-50 rounded-lg p-6 mb-6">
-            <p className="text-gray-600 text-sm mb-2">معرف المستخدم</p>
+            <p className="text-gray-600 text-sm mb-2">Identifiant Utilisateur / معرف المستخدم</p>
             <div className="flex items-center justify-between">
               <p className="text-lg font-semibold text-gray-800">{userId}</p>
               <button
@@ -263,31 +247,31 @@ export default function AccountConfirmation() {
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#7e22ce")}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#a855f7")}
               >
-                نسخ
+                Copier
               </button>
             </div>
           </div>
 
           {/* Member Information */}
           <div className="space-y-4 border-t pt-6">
-            <h3 className="font-bold text-lg text-gray-800 mb-4">البيانات الشخصية</h3>
+            <h3 className="font-bold text-lg text-gray-800 mb-4">Données Personnelles / البيانات الشخصية</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-gray-500 text-sm">الاسم</p>
+                <p className="text-gray-500 text-sm">Nom / الاسم</p>
                 <p className="font-semibold text-gray-800">
                   {registrationData.firstName} {registrationData.lastName}
                 </p>
               </div>
               <div>
-                <p className="text-gray-500 text-sm">الهاتف</p>
+                <p className="text-gray-500 text-sm">Téléphone / الهاتف</p>
                 <p className="font-semibold text-gray-800">{registrationData.userPhone}</p>
               </div>
               <div>
-                <p className="text-gray-500 text-sm">الفريق</p>
+                <p className="text-gray-500 text-sm">Unité / الفريق</p>
                 <p className="font-semibold text-gray-800">{registrationData.patrol}</p>
               </div>
               <div>
-                <p className="text-gray-500 text-sm">الدور</p>
+                <p className="text-gray-500 text-sm">Rôle / الدور</p>
                 <p className="font-semibold text-gray-800">{registrationData.role}</p>
               </div>
             </div>
@@ -299,7 +283,7 @@ export default function AccountConfirmation() {
           className="bg-white rounded-lg shadow-lg p-8 mb-8"
           style={{ borderRight: "4px solid #2563eb" }}
         >
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">تحميل شهادة التأكيد</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Télécharger le Certificat / تحميل شهادة التأكيد</h2>
 
           {!pdfGenerated ? (
             <button
@@ -313,7 +297,7 @@ export default function AccountConfirmation() {
                 opacity: generating ? 0.5 : 1,
               }}
             >
-              {generating ? "جاري إنشاء PDF..." : "إنشاء ملف PDF"}
+              {generating ? "Génération en cours..." : "Créer le PDF"}
             </button>
           ) : (
             <div className="space-y-6">
@@ -329,14 +313,15 @@ export default function AccountConfirmation() {
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#1d4ed8")}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#2563eb")}
                 >
-                  📥 تحميل ملف PDF
+                  📥 Télécharger PDF
                 </a>
               </div>
 
               {/* QR Code */}
               <div className="bg-gray-50 rounded-lg p-6 flex flex-col items-center">
                 <p className="text-gray-600 mb-4 text-center">
-                  امسح رمز الاستجابة السريعة بهاتفك الذكي للوصول إلى البيانات
+                  Scannez le code QR avec votre téléphone pour accéder aux données<br />
+                  <span className="text-sm text-gray-500">امسح رمز الاستجابة السريعة بهاتفك للوصول إلى البيانات</span>
                 </p>
                 {qrCode ? (
                   <img
@@ -354,7 +339,7 @@ export default function AccountConfirmation() {
                       backgroundColor: "#e5e7eb",
                     }}
                   >
-                    <p className="text-gray-500">جاري إنشاء الرمز...</p>
+                    <p className="text-gray-500">Génération en cours...</p>
                   </div>
                 )}
               </div>
@@ -369,7 +354,7 @@ export default function AccountConfirmation() {
             className="flex-1 font-bold py-3 px-6 rounded-lg transition-shadow text-white"
             style={{ background: "linear-gradient(to left, #dc2626, #7c3aed)" }}
           >
-            تسجيل الدخول
+            Se connecter / تسجيل الدخول
           </button>
           <button
             onClick={() => navigate("/")}
@@ -378,7 +363,7 @@ export default function AccountConfirmation() {
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#9ca3af")}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#d1d5db")}
           >
-            الرئيسية
+            Accueil / الرئيسية
           </button>
         </div>
       </main>
