@@ -90,55 +90,74 @@ export default function AccountConfirmation() {
         pdfRef.current.style.width = "794px";
       }
 
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Step 3: Capture and generate PDF
       if (pdfRef.current) {
-        const canvas = await html2canvas(pdfRef.current, {
-          scale: 2,
-          logging: false,
-          useCORS: true,
-          backgroundColor: "#ffffff",
-          windowWidth: 794,
-          windowHeight: 1123,
-          imageTimeout: 0,
-        });
-
-        const doc = new jsPDF({
-          format: "a4",
-          orientation: "portrait",
-        });
-
-        const imgData = canvas.toDataURL("image/png");
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-
-        doc.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
-        const pdfData = doc.output("dataurlstring");
-        setPdfUrl(pdfData);
-
-        // Step 4: Save to Supabase
         try {
-          await fetch("/api/auth/save-documents", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              user_id: userId,
-              generated_id: memberId,
-              pdf_url: pdfData,
-              qr_code_url: qrCodeDataUrl,
-            }),
+          const canvas = await html2canvas(pdfRef.current, {
+            scale: 1.5,
+            logging: false,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: "#ffffff",
+            windowWidth: 794,
+            windowHeight: 1123,
+            imageTimeout: 5000,
+            removeContainer: false,
           });
-        } catch (saveError) {
-          console.error("Erreur lors de l'enregistrement dans Supabase:", saveError);
-        }
 
-        // Hide PDF element
-        if (pdfRef.current) {
-          pdfRef.current.style.display = "none";
-        }
+          // Validate canvas
+          if (!canvas || canvas.width === 0 || canvas.height === 0) {
+            throw new Error("Canvas generation failed");
+          }
 
-        setPdfGenerated(true);
+          const imgData = canvas.toDataURL("image/jpeg", 0.95);
+
+          // Validate image data
+          if (!imgData || !imgData.startsWith("data:image")) {
+            throw new Error("Invalid image data URL");
+          }
+
+          const doc = new jsPDF({
+            format: "a4",
+            orientation: "portrait",
+            compress: true,
+          });
+
+          const pageWidth = doc.internal.pageSize.getWidth();
+          const pageHeight = doc.internal.pageSize.getHeight();
+
+          doc.addImage(imgData, "JPEG", 0, 0, pageWidth, pageHeight);
+          const pdfData = doc.output("dataurlstring");
+          setPdfUrl(pdfData);
+
+          // Step 4: Save to Supabase
+          try {
+            await fetch("/api/auth/save-documents", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                user_id: userId,
+                generated_id: memberId,
+                pdf_url: pdfData,
+                qr_code_url: qrCodeDataUrl,
+              }),
+            });
+          } catch (saveError) {
+            console.error("Erreur lors de l'enregistrement dans Supabase:", saveError);
+          }
+
+          setPdfGenerated(true);
+        } catch (canvasError) {
+          console.error("Erreur canvas:", canvasError);
+          alert("Erreur lors de la capture du PDF. Veuillez réessayer.");
+        } finally {
+          // Hide PDF element
+          if (pdfRef.current) {
+            pdfRef.current.style.display = "none";
+          }
+        }
       }
     } catch (error) {
       console.error("Erreur lors de la génération du PDF:", error);
