@@ -4,6 +4,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { generateMemberId } from "../lib/memberIdGenerator";
 import { generateQRCodeImage } from "../lib/qrCodeGenerator";
+import { waitForImagesInElement } from "../lib/imageLoader";
 import { PdfDocument } from "@/components/PdfDocument";
 import Header from "@/components/Header";
 
@@ -82,42 +83,66 @@ export default function AccountConfirmation() {
         return;
       }
 
-      // Step 2: Show PDF with QR code and wait for render
+      // Step 2: Show PDF with QR code and wait for images to load
       if (pdfRef.current) {
         pdfRef.current.style.display = "block";
-        pdfRef.current.style.position = "absolute";
-        pdfRef.current.style.left = "-9999px";
+        pdfRef.current.style.position = "fixed";
+        pdfRef.current.style.top = "0";
+        pdfRef.current.style.left = "0";
         pdfRef.current.style.width = "794px";
+        pdfRef.current.style.zIndex = "-1";
+        pdfRef.current.style.opacity = "0";
+        pdfRef.current.style.pointerEvents = "none";
       }
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait for all images in the PDF to load
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      if (pdfRef.current) {
+        try {
+          await waitForImagesInElement(pdfRef.current, 5000);
+        } catch (err) {
+          console.warn("Image loading timed out, continuing anyway:", err);
+        }
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // Step 3: Capture and generate PDF
       if (pdfRef.current) {
         try {
+          console.log("Starting html2canvas capture...");
           const canvas = await html2canvas(pdfRef.current, {
-            scale: 1.5,
-            logging: false,
+            scale: 1,
+            logging: true,
             useCORS: true,
             allowTaint: true,
             backgroundColor: "#ffffff",
             windowWidth: 794,
             windowHeight: 1123,
-            imageTimeout: 5000,
+            imageTimeout: 10000,
             removeContainer: false,
+            proxy: undefined,
+            foreignObjectRendering: false,
           });
 
+          console.log("Canvas dimensions:", canvas.width, "x", canvas.height);
+
           // Validate canvas
-          if (!canvas || canvas.width === 0 || canvas.height === 0) {
-            throw new Error("Canvas generation failed");
+          if (!canvas || canvas.width < 100 || canvas.height < 100) {
+            console.error("Canvas too small or invalid");
+            throw new Error("Canvas generation failed: invalid dimensions");
           }
 
-          const imgData = canvas.toDataURL("image/jpeg", 0.95);
+          const imgData = canvas.toDataURL("image/jpeg", 0.92);
 
           // Validate image data
-          if (!imgData || !imgData.startsWith("data:image")) {
+          if (!imgData || imgData.length < 1000) {
+            console.error("Invalid image data");
             throw new Error("Invalid image data URL");
           }
+
+          console.log("Image data generated, size:", imgData.length);
 
           const doc = new jsPDF({
             format: "a4",
@@ -130,11 +155,13 @@ export default function AccountConfirmation() {
 
           doc.addImage(imgData, "JPEG", 0, 0, pageWidth, pageHeight);
           const pdfData = doc.output("dataurlstring");
+
+          console.log("PDF generated, size:", pdfData.length);
           setPdfUrl(pdfData);
 
           // Step 4: Save to Supabase
           try {
-            await fetch("/api/auth/save-documents", {
+            const response = await fetch("/api/auth/save-documents", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -144,18 +171,24 @@ export default function AccountConfirmation() {
                 qr_code_url: qrCodeDataUrl,
               }),
             });
+
+            if (!response.ok) {
+              console.error("Supabase save error:", response.statusText);
+            }
           } catch (saveError) {
             console.error("Erreur lors de l'enregistrement dans Supabase:", saveError);
           }
 
           setPdfGenerated(true);
         } catch (canvasError) {
-          console.error("Erreur canvas:", canvasError);
+          console.error("Erreur canvas détaillée:", canvasError);
           alert("Erreur lors de la capture du PDF. Veuillez réessayer.");
         } finally {
           // Hide PDF element
           if (pdfRef.current) {
             pdfRef.current.style.display = "none";
+            pdfRef.current.style.position = "absolute";
+            pdfRef.current.style.left = "-9999px";
           }
         }
       }

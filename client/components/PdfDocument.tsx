@@ -66,13 +66,16 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
       <div
         ref={ref}
         dir="rtl"
-        className="w-full bg-white p-8 text-gray-900"
         style={{
-          fontFamily: "'Arial', 'Segoe UI', sans-serif",
+          fontFamily: "'Arial', sans-serif",
           lineHeight: "1.6",
           color: "#000000",
           backgroundColor: "#ffffff",
-          // Use only HEX colors - NO oklch, oklab, or css functions
+          width: "794px",
+          padding: "32px",
+          margin: "0",
+          boxSizing: "border-box",
+          pageBreakAfter: "always",
         }}
       >
         {/* Header */}
