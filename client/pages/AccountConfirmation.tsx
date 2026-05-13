@@ -1,11 +1,8 @@
 import { useState, useRef } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 import { generateMemberId } from "../lib/memberIdGenerator";
 import { generateQRCodeImage } from "../lib/qrCodeGenerator";
-import { waitForImagesInElement } from "../lib/imageLoader";
-import { PdfDocument } from "@/components/PdfDocument";
+import { generatePDFDirect } from "../lib/pdfGenerator";
 import Header from "@/components/Header";
 
 interface RegistrationData {
@@ -27,7 +24,6 @@ interface RegistrationData {
 export default function AccountConfirmation() {
   const location = useLocation();
   const navigate = useNavigate();
-  const pdfRef = useRef<HTMLDivElement>(null);
 
   const [pdfGenerated, setPdfGenerated] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string>("");
@@ -83,118 +79,57 @@ export default function AccountConfirmation() {
         return;
       }
 
-      // Step 2: Show PDF with QR code and wait for images to load
-      if (pdfRef.current) {
-        pdfRef.current.style.display = "block";
-        pdfRef.current.style.position = "fixed";
-        pdfRef.current.style.top = "0";
-        pdfRef.current.style.left = "0";
-        pdfRef.current.style.width = "794px";
-        pdfRef.current.style.zIndex = "-1";
-        pdfRef.current.style.opacity = "0";
-        pdfRef.current.style.pointerEvents = "none";
-      }
+      // Step 2: Generate PDF directly without html2canvas
+      try {
+        const pdfData = await generatePDFDirect({
+          firstName: registrationData.firstName || "",
+          lastName: registrationData.lastName || "",
+          memberId,
+          userId,
+          phone: registrationData.userPhone,
+          birthDate: registrationData.birthDate,
+          gender: registrationData.gender,
+          patrol: registrationData.patrol,
+          role: registrationData.role,
+          guardianFirstName: registrationData.guardianFirstName,
+          guardianLastName: registrationData.guardianLastName,
+          guardianPhone: registrationData.guardianPhone,
+          homePhone: registrationData.homePhone,
+          guardianRelationship: registrationData.guardianRelationship,
+          qrCodeImageUrl: qrCodeDataUrl,
+          additionalPhones: ["+212 675-202336", "+212 646-610766"],
+        });
 
-      // Wait for all images in the PDF to load
-      await new Promise(resolve => setTimeout(resolve, 500));
+        setPdfUrl(pdfData);
 
-      if (pdfRef.current) {
+        // Step 3: Save to Supabase
         try {
-          await waitForImagesInElement(pdfRef.current, 5000);
-        } catch (err) {
-          console.warn("Image loading timed out, continuing anyway:", err);
-        }
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Step 3: Capture and generate PDF
-      if (pdfRef.current) {
-        try {
-          console.log("Starting html2canvas capture...");
-          const canvas = await html2canvas(pdfRef.current, {
-            scale: 1,
-            logging: true,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: "#ffffff",
-            windowWidth: 794,
-            windowHeight: 1123,
-            imageTimeout: 10000,
-            removeContainer: false,
-            proxy: undefined,
-            foreignObjectRendering: false,
+          const response = await fetch("/api/auth/save-documents", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              user_id: userId,
+              generated_id: memberId,
+              pdf_url: pdfData,
+              qr_code_url: qrCodeDataUrl,
+            }),
           });
 
-          console.log("Canvas dimensions:", canvas.width, "x", canvas.height);
-
-          // Validate canvas
-          if (!canvas || canvas.width < 100 || canvas.height < 100) {
-            console.error("Canvas too small or invalid");
-            throw new Error("Canvas generation failed: invalid dimensions");
+          if (!response.ok) {
+            console.error("Supabase save error:", response.statusText);
           }
-
-          const imgData = canvas.toDataURL("image/jpeg", 0.92);
-
-          // Validate image data
-          if (!imgData || imgData.length < 1000) {
-            console.error("Invalid image data");
-            throw new Error("Invalid image data URL");
-          }
-
-          console.log("Image data generated, size:", imgData.length);
-
-          const doc = new jsPDF({
-            format: "a4",
-            orientation: "portrait",
-            compress: true,
-          });
-
-          const pageWidth = doc.internal.pageSize.getWidth();
-          const pageHeight = doc.internal.pageSize.getHeight();
-
-          doc.addImage(imgData, "JPEG", 0, 0, pageWidth, pageHeight);
-          const pdfData = doc.output("dataurlstring");
-
-          console.log("PDF generated, size:", pdfData.length);
-          setPdfUrl(pdfData);
-
-          // Step 4: Save to Supabase
-          try {
-            const response = await fetch("/api/auth/save-documents", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                user_id: userId,
-                generated_id: memberId,
-                pdf_url: pdfData,
-                qr_code_url: qrCodeDataUrl,
-              }),
-            });
-
-            if (!response.ok) {
-              console.error("Supabase save error:", response.statusText);
-            }
-          } catch (saveError) {
-            console.error("Erreur lors de l'enregistrement dans Supabase:", saveError);
-          }
-
-          setPdfGenerated(true);
-        } catch (canvasError) {
-          console.error("Erreur canvas détaillée:", canvasError);
-          alert("Erreur lors de la capture du PDF. Veuillez réessayer.");
-        } finally {
-          // Hide PDF element
-          if (pdfRef.current) {
-            pdfRef.current.style.display = "none";
-            pdfRef.current.style.position = "absolute";
-            pdfRef.current.style.left = "-9999px";
-          }
+        } catch (saveError) {
+          console.error("Erreur lors de l'enregistrement dans Supabase:", saveError);
         }
+
+        setPdfGenerated(true);
+      } catch (pdfError) {
+        console.error("Erreur lors de la génération du PDF:", pdfError);
+        alert("Erreur lors de la génération du PDF. Veuillez réessayer.");
       }
     } catch (error) {
-      console.error("Erreur lors de la génération du PDF:", error);
-      alert("Erreur lors de la génération du PDF. Veuillez réessayer.");
+      console.error("Erreur générale:", error);
+      alert("Une erreur est survenue. Veuillez réessayer.");
     } finally {
       setGenerating(false);
     }
@@ -208,29 +143,6 @@ export default function AccountConfirmation() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-blue-50 to-purple-50" dir="rtl">
       <Header />
-
-      {/* Hidden PDF Document for capture */}
-      <div style={{ display: "none" }}>
-        <PdfDocument
-          ref={pdfRef}
-          firstName={registrationData.firstName || ""}
-          lastName={registrationData.lastName || ""}
-          memberId={memberId}
-          userId={userId}
-          phone={registrationData.userPhone || ""}
-          birthDate={registrationData.birthDate}
-          gender={registrationData.gender}
-          patrol={registrationData.patrol}
-          role={registrationData.role}
-          guardianFirstName={registrationData.guardianFirstName}
-          guardianLastName={registrationData.guardianLastName}
-          guardianPhone={registrationData.guardianPhone}
-          homePhone={registrationData.homePhone}
-          guardianRelationship={registrationData.guardianRelationship}
-          additionalPhones={["+212 675-202336", "+212 646-610766"]}
-          qrCodeImageUrl={qrCode}
-        />
-      </div>
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-12">
