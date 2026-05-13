@@ -16,7 +16,6 @@ import ForgotPassword from "./pages/ForgotPassword";
 import AccountConfirmation from "./pages/AccountConfirmation";
 import Dashboard from "./pages/Dashboard";
 import Reports from "./pages/Reports";
-import AddReport from "./pages/AddReport";
 import Program from "./pages/Program";
 import Ideas from "./pages/Ideas";
 import Account from "./pages/Account";
@@ -63,14 +62,6 @@ const App = () => (
                 element={
                   <ProtectedLayout>
                     <Reports />
-                  </ProtectedLayout>
-                }
-              />
-              <Route
-                path="/add-report"
-                element={
-                  <ProtectedLayout>
-                    <AddReport />
                   </ProtectedLayout>
                 }
               />

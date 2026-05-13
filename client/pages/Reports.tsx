@@ -160,14 +160,6 @@ export default function Reports() {
         </div>
       )}
 
-      {/* Floating Action Button */}
-      <Link
-        to="/add-report"
-        className="fixed bottom-8 left-8 w-16 h-16 bg-gradient-to-l from-red-600 to-purple-600 hover:from-red-700 hover:to-purple-700 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all text-2xl font-bold z-10"
-        title="إضافة تقرير جديد"
-      >
-        +
-      </Link>
     </Layout>
   );
 }
