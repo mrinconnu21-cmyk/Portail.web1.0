@@ -20,6 +20,7 @@ import Ideas from "./pages/Ideas";
 import Account from "./pages/Account";
 import MyProfile from "./pages/MyProfile";
 import Sessions from "./pages/Sessions";
+import AdminDocuments from "./pages/AdminDocuments";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -101,6 +102,14 @@ const App = () => (
                 element={
                   <ProtectedLayout>
                     <Sessions />
+                  </ProtectedLayout>
+                }
+              />
+              <Route
+                path="/admin/documents"
+                element={
+                  <ProtectedLayout>
+                    <AdminDocuments />
                   </ProtectedLayout>
                 }
               />

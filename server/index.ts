@@ -5,6 +5,7 @@ import { handleDemo } from "./routes/demo";
 import { handleSendRegistrationWhatsApp, handleIncomingIdea } from "./routes/whatsapp";
 import { handleRegister, handleLogin, handleGetProfile, handleSavePdfQrCode } from "./routes/auth";
 import { handleSendIdeaNotification, handleGetIdeas } from "./routes/ideas";
+import { handleRegenerateDocuments, handleGetDocumentStatus } from "./routes/regenerate-documents";
 
 export function createServer() {
   const app = express();
@@ -27,6 +28,10 @@ export function createServer() {
   app.post("/api/auth/login", handleLogin);
   app.get("/api/auth/profile", handleGetProfile);
   app.post("/api/auth/save-documents", handleSavePdfQrCode);
+
+  // Document regeneration routes
+  app.post("/api/admin/regenerate-documents", handleRegenerateDocuments);
+  app.get("/api/admin/document-status", handleGetDocumentStatus);
 
   // WhatsApp routes
   app.post("/api/whatsapp/send-registration", handleSendRegistrationWhatsApp);

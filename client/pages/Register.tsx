@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
+import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import { generateMemberId } from "../lib/memberIdGenerator";
 
 interface PatrolOption {
@@ -740,46 +741,39 @@ export default function Register() {
 
                 {/* Security Section */}
                 <div className="border-t-2 border-purple-200 pt-6">
-                  <h3 className="text-lg font-bold text-gray-800 mb-4">أمان الحساب</h3>
+                  <h3 className="text-lg font-bold text-gray-800 mb-4">أمان الحساب / Sécurité du Compte</h3>
 
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                      كلمة المرور <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="أدخل كلمة مرور قوية (8 أحرف على الأقل)"
-                      minLength={8}
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 ${
-                        errors.password ? "border-red-500" : "border-gray-300"
-                      }`}
+                  <div className="space-y-4">
+                    <PasswordStrengthIndicator
+                      password={formData.password}
+                      onPasswordChange={(pwd) =>
+                        setFormData((prev) => ({ ...prev, password: pwd }))
+                      }
+                      showLabel={true}
                     />
                     {errors.password && (
-                      <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+                      <p className="text-red-500 text-sm">{errors.password}</p>
                     )}
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2 mt-4">
-                      تأكيد كلمة المرور <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      placeholder="أعد كتابة كلمة المرور"
-                      minLength={8}
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 ${
-                        errors.confirmPassword ? "border-red-500" : "border-gray-300"
-                      }`}
-                    />
-                    {errors.confirmPassword && (
-                      <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
-                    )}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        تأكيد كلمة المرور / Confirmer le Mot de Passe <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="password"
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        placeholder="أعد كتابة كلمة المرور / Retapez votre mot de passe"
+                        minLength={8}
+                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 ${
+                          errors.confirmPassword ? "border-red-500" : "border-gray-300"
+                        }`}
+                      />
+                      {errors.confirmPassword && (
+                        <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
 

@@ -45,8 +45,8 @@ export const generatePDFDirect = async (data: PDFData): Promise<string> => {
   const contentWidth = pageWidth - 2 * margin;
   let yPosition = margin;
 
-  // Set default font
-  doc.setFont("arial");
+  // Set default font - use built-in fonts that work better
+  doc.setFont("helvetica");
 
   // Header
   doc.setFontSize(18);
@@ -90,7 +90,7 @@ export const generatePDFDirect = async (data: PDFData): Promise<string> => {
   // Full Name
   doc.text("Nom complet / الاسم الكامل:", margin + 3, yPosition + 2);
   doc.setTextColor(31, 41, 55);
-  doc.setFont("arial", "bold");
+  doc.setFont("helvetica", "bold");
   doc.text(`${data.firstName} ${data.lastName}`, margin + 3, yPosition + 6);
 
   // Member ID
@@ -177,36 +177,36 @@ export const generatePDFDirect = async (data: PDFData): Promise<string> => {
     // Guardian Name
     doc.text("Nom du Tuteur / اسم الولي:", margin + 3, yPosition + 2);
     doc.setTextColor(31, 41, 55);
-    doc.setFont("arial", "bold");
+    doc.setFont("helvetica", "bold");
     doc.text(`${data.guardianFirstName || ""} ${data.guardianLastName || ""}`, margin + 3, yPosition + 6);
 
     // Relationship
     if (data.guardianRelationship) {
-      doc.setFont("arial");
+      doc.setFont("helvetica");
       doc.setTextColor(102, 102, 102);
       doc.text("Relation / الصفة:", pageWidth / 2, yPosition + 2);
       doc.setTextColor(31, 41, 55);
-      doc.setFont("arial", "bold");
+      doc.setFont("helvetica", "bold");
       doc.text(data.guardianRelationship, pageWidth / 2, yPosition + 6);
     }
 
     // Guardian Phone
     if (data.guardianPhone) {
-      doc.setFont("arial");
+      doc.setFont("helvetica");
       doc.setTextColor(102, 102, 102);
       doc.text("Téléphone Tuteur / هاتف الولي:", margin + 3, yPosition + 12);
       doc.setTextColor(31, 41, 55);
-      doc.setFont("arial", "bold");
+      doc.setFont("helvetica", "bold");
       doc.text(data.guardianPhone, margin + 3, yPosition + 16);
     }
 
     // Home Phone
     if (data.homePhone) {
-      doc.setFont("arial");
+      doc.setFont("helvetica");
       doc.setTextColor(102, 102, 102);
       doc.text("Téléphone Domicile / الهاتف الثابت:", pageWidth / 2, yPosition + 12);
       doc.setTextColor(31, 41, 55);
-      doc.setFont("arial", "bold");
+      doc.setFont("helvetica", "bold");
       doc.text(data.homePhone, pageWidth / 2, yPosition + 16);
     }
 
