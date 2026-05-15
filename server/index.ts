@@ -6,6 +6,7 @@ import { handleSendRegistrationWhatsApp, handleIncomingIdea } from "./routes/wha
 import { handleRegister, handleLogin, handleGetProfile, handleSavePdfQrCode } from "./routes/auth";
 import { handleSendIdeaNotification, handleGetIdeas } from "./routes/ideas";
 import { handleRegenerateDocuments, handleGetDocumentStatus } from "./routes/regenerate-documents";
+import { handleVerifyIdentity, handleResetPassword } from "./routes/password-recovery";
 
 export function createServer() {
   const app = express();
@@ -28,6 +29,8 @@ export function createServer() {
   app.post("/api/auth/login", handleLogin);
   app.get("/api/auth/profile", handleGetProfile);
   app.post("/api/auth/save-documents", handleSavePdfQrCode);
+  app.post("/api/auth/verify-identity", handleVerifyIdentity);
+  app.post("/api/auth/reset-password", handleResetPassword);
 
   // Document regeneration routes
   app.post("/api/admin/regenerate-documents", handleRegenerateDocuments);
