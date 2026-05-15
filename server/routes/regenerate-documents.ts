@@ -113,9 +113,6 @@ export const handleGetDocumentStatus: RequestHandler = async (req, res) => {
 
     if (memberId) {
       query = query.eq("generated_id", memberId as string);
-    } else {
-      // Get all members and their document status
-      query = query.select("generated_id, first_name, last_name, pdf_url, qr_code_url, documents_generated_at");
     }
 
     const { data, error } = await query;
