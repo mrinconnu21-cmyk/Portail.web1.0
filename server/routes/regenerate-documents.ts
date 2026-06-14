@@ -6,85 +6,61 @@ interface MemberData {
   first_name: string;
   last_name: string;
   generated_id: string;
-  user_id: string;
   user_phone: string;
   birth_date: string;
   gender: string;
-  patrol_name: string;
-  role_name: string;
-  guardian_first_name: string;
-  guardian_last_name: string;
-  guardian_phone: string;
-  home_phone: string;
-  guardian_relationship: string;
+  pdf_url?: string;
+  qr_code_url?: string;
 }
 
 export const handleRegenerateDocuments: RequestHandler = async (req, res) => {
   try {
     const { memberId } = req.body;
 
-    // Fetch member data
+    // Fetch user data
     let query = supabase
-      .from("members")
+      .from("users")
       .select(
-        "id, first_name, last_name, generated_id, user_id, user_phone, birth_date, gender, patrol_name, role_name, guardian_first_name, guardian_last_name, guardian_phone, home_phone, guardian_relationship"
+        "id, first_name, last_name, generated_id, user_phone, birth_date, gender, pdf_url, qr_code_url"
       );
 
     if (memberId) {
       query = query.eq("generated_id", memberId);
     }
 
-    const { data: members, error: fetchError } = await query;
+    const { data: users, error: fetchError } = await query;
 
     if (fetchError) {
       return res.status(500).json({
-        error: "Failed to fetch members",
+        error: "Failed to fetch users",
         details: fetchError.message,
       });
     }
 
-    if (!members || members.length === 0) {
+    if (!users || users.length === 0) {
       return res.status(404).json({
         error: memberId
-          ? "Member not found"
-          : "No members found",
+          ? "User not found"
+          : "No users found",
       });
     }
 
     const results = [];
 
-    for (const member of members as MemberData[]) {
+    for (const user of users as MemberData[]) {
       try {
-        // Update documents_generated_at timestamp
-        const { error: updateError } = await supabase
-          .from("members")
-          .update({
-            documents_generated_at: new Date().toISOString(),
-          })
-          .eq("id", member.id);
-
-        if (updateError) {
-          console.error(`Error updating member ${member.id}:`, updateError);
-          results.push({
-            memberId: member.generated_id,
-            status: "error",
-            message: updateError.message,
-          });
-          continue;
-        }
-
         results.push({
-          memberId: member.generated_id,
-          name: `${member.first_name} ${member.last_name}`,
+          memberId: user.generated_id,
+          name: `${user.first_name} ${user.last_name}`,
           status: "success",
           message: "Documents regeneration triggered",
         });
-      } catch (memberError) {
-        console.error(`Error processing member ${member.id}:`, memberError);
+      } catch (userError) {
+        console.error(`Error processing user ${user.id}:`, userError);
         results.push({
-          memberId: member.generated_id,
+          memberId: user.generated_id,
           status: "error",
-          message: String(memberError),
+          message: String(userError),
         });
       }
     }
@@ -108,8 +84,8 @@ export const handleGetDocumentStatus: RequestHandler = async (req, res) => {
     const { memberId } = req.query;
 
     let query = supabase
-      .from("members")
-      .select("generated_id, first_name, last_name, pdf_url, qr_code_url, documents_generated_at");
+      .from("users")
+      .select("generated_id, first_name, last_name, pdf_url, qr_code_url, updated_at");
 
     if (memberId) {
       query = query.eq("generated_id", memberId as string);
@@ -124,12 +100,12 @@ export const handleGetDocumentStatus: RequestHandler = async (req, res) => {
       });
     }
 
-    const status = data?.map((member) => ({
-      memberId: member.generated_id,
-      name: `${member.first_name} ${member.last_name}`,
-      hasPdf: !!member.pdf_url,
-      hasQrCode: !!member.qr_code_url,
-      generatedAt: member.documents_generated_at,
+    const status = data?.map((user) => ({
+      memberId: user.generated_id,
+      name: `${user.first_name} ${user.last_name}`,
+      hasPdf: !!user.pdf_url,
+      hasQrCode: !!user.qr_code_url,
+      generatedAt: user.updated_at,
     })) || [];
 
     res.json({
