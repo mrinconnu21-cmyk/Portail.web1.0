@@ -7,9 +7,15 @@ import { supabase } from './supabase';
 export interface Report {
   id: string;
   title: string;
+  report_date?: string;
   location?: string;
   time?: string;
   objective?: string;
+  status?: string;
+  activity_details?: string;
+  members_count?: number;
+  male_count?: number;
+  female_count?: number;
   participants_boys: number;
   participants_girls: number;
   leaders_count: number;
@@ -30,6 +36,10 @@ export interface Session {
   id: string;
   title: string;
   date_time?: string;
+  start_date?: string;
+  end_date?: string;
+  image_url?: string;
+  description?: string;
   location?: string;
   target_audience?: string;
   objective?: string;
@@ -46,6 +56,7 @@ export interface Member {
   full_name: string;
   role?: string;
   phone?: string;
+  email?: string;
   team?: string;
   profile_photo?: string;
   bio?: string;

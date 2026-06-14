@@ -32,10 +32,8 @@ function expressPlugin(): Plugin {
     configureServer(server) {
       const app = createServer();
 
-      // Add Express app FIRST to handle API routes before Vite
-      return () => {
-        server.middlewares.use(app);
-      };
+      // Add Express as early middleware to handle API routes before Vite
+      server.middlewares.use(app);
     },
   };
 }
