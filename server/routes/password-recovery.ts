@@ -1,14 +1,23 @@
 import { RequestHandler } from "express";
 import { supabase } from "../lib/supabase";
+import { trimString, normalizePhoneNumber } from "../../shared/utils";
 
 export const handleVerifyIdentity: RequestHandler = async (req, res) => {
   try {
-    const { firstName, lastName, userPhone, birthDate, memberId } = req.body;
+    // Clean input data
+    let { firstName, lastName, userPhone, birthDate, memberId } = req.body;
+
+    firstName = trimString(firstName);
+    lastName = trimString(lastName);
+    memberId = trimString(memberId);
+
+    // Normalize phone number
+    const normalizedPhone = normalizePhoneNumber(userPhone);
 
     // Validate input
-    if (!firstName || !lastName || !userPhone || !birthDate || !memberId) {
+    if (!firstName || !lastName || !normalizedPhone || !birthDate || !memberId) {
       return res.status(400).json({
-        error: "جميع الحقول مطلوبة",
+        error: "جميع الحقول مطلوبة أو رقم الهاتف غير صحيح",
       });
     }
 
@@ -18,7 +27,7 @@ export const handleVerifyIdentity: RequestHandler = async (req, res) => {
       .select("id, first_name, last_name, user_phone, birth_date, generated_id, password")
       .eq("first_name", firstName)
       .eq("last_name", lastName)
-      .eq("user_phone", userPhone)
+      .eq("user_phone", normalizedPhone)
       .eq("birth_date", birthDate)
       .eq("generated_id", memberId)
       .single();
@@ -48,7 +57,11 @@ export const handleVerifyIdentity: RequestHandler = async (req, res) => {
 
 export const handleResetPassword: RequestHandler = async (req, res) => {
   try {
-    const { memberId, newPassword } = req.body;
+    // Clean input data
+    let { memberId, newPassword } = req.body;
+
+    memberId = trimString(memberId);
+    newPassword = trimString(newPassword);
 
     // Validate input
     if (!memberId || !newPassword) {

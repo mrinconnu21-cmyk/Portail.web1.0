@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import PasswordInput from "@/components/PasswordInput";
 import { generateMemberId } from "../lib/memberIdGenerator";
+import { trimFormData, normalizePhoneNumber } from "@shared/utils";
 
 interface PatrolOption {
   id: string;
@@ -223,30 +224,33 @@ export default function Register() {
     }
 
     try {
+      // Clean form data before sending
+      const cleanedFormData = {
+        first_name: formData.firstName.trim(),
+        last_name: formData.lastName.trim(),
+        birth_date: formData.birthDate,
+        gender: formData.gender.trim(),
+        user_phone: formData.userPhone.trim(),
+        patrol_id: formData.patrol,
+        role_id: formData.role,
+        is_high_patrol: formData.isHighPatrol,
+        guardian_first_name: formData.guardianFirstName.trim(),
+        guardian_last_name: formData.guardianLastName.trim(),
+        guardian_relationship: formData.guardianRelationship.trim(),
+        guardian_relationship_other: formData.guardianRelationshipOther.trim(),
+        guardian_cin: formData.guardianCin.trim(),
+        father_phone: formData.fatherPhone.trim(),
+        mother_phone: formData.motherPhone.trim(),
+        home_phone: formData.homePhone.trim(),
+        additional_info: formData.additionalInfo.trim(),
+        password: formData.password.trim(),
+      };
+
       // Register user in database
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          birth_date: formData.birthDate,
-          gender: formData.gender,
-          user_phone: formData.userPhone,
-          patrol_id: formData.patrol,
-          role_id: formData.role,
-          is_high_patrol: formData.isHighPatrol,
-          guardian_first_name: formData.guardianFirstName,
-          guardian_last_name: formData.guardianLastName,
-          guardian_relationship: formData.guardianRelationship,
-          guardian_relationship_other: formData.guardianRelationshipOther,
-          guardian_cin: formData.guardianCin,
-          father_phone: formData.fatherPhone,
-          mother_phone: formData.motherPhone,
-          home_phone: formData.homePhone,
-          additional_info: formData.additionalInfo,
-          password: formData.password,
-        }),
+        body: JSON.stringify(cleanedFormData),
       });
 
       if (!response.ok) {

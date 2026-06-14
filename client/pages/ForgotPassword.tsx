@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import PasswordInput from "@/components/PasswordInput";
+import { trimFormData, normalizePhoneNumber, trimString } from "@shared/utils";
 
 interface RecoveryStep {
   step: "verify" | "choose-action" | "show-password" | "reset-password";
@@ -54,10 +55,19 @@ export default function ForgotPassword() {
     setError("");
 
     try {
+      // Clean and normalize data before sending
+      const cleanedData = {
+        firstName: trimString(verifyData.firstName),
+        lastName: trimString(verifyData.lastName),
+        userPhone: trimString(verifyData.userPhone),
+        birthDate: verifyData.birthDate,
+        memberId: trimString(verifyData.memberId),
+      };
+
       const response = await fetch("/api/auth/verify-identity", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(verifyData),
+        body: JSON.stringify(cleanedData),
       });
 
       const data = await response.json();
@@ -100,12 +110,15 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
+      // Clean password before sending
+      const cleanedPassword = trimString(newPassword);
+
       const response = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           memberId: recoveredAccount?.memberId,
-          newPassword,
+          newPassword: cleanedPassword,
         }),
       });
 
