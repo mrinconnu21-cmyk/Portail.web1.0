@@ -5,6 +5,8 @@ import { handleDemo } from "./routes/demo";
 import { handleSendRegistrationWhatsApp, handleIncomingIdea } from "./routes/whatsapp";
 import { handleRegister, handleLogin, handleGetProfile, handleSavePdfQrCode } from "./routes/auth";
 import { handleSendIdeaNotification, handleGetIdeas } from "./routes/ideas";
+import { handleRegenerateDocuments, handleGetDocumentStatus } from "./routes/regenerate-documents";
+import { handleVerifyIdentity, handleResetPassword } from "./routes/password-recovery";
 
 export function createServer() {
   const app = express();
@@ -27,6 +29,12 @@ export function createServer() {
   app.post("/api/auth/login", handleLogin);
   app.get("/api/auth/profile", handleGetProfile);
   app.post("/api/auth/save-documents", handleSavePdfQrCode);
+  app.post("/api/auth/verify-identity", handleVerifyIdentity);
+  app.post("/api/auth/reset-password", handleResetPassword);
+
+  // Document regeneration routes
+  app.post("/api/admin/regenerate-documents", handleRegenerateDocuments);
+  app.get("/api/admin/document-status", handleGetDocumentStatus);
 
   // WhatsApp routes
   app.post("/api/whatsapp/send-registration", handleSendRegistrationWhatsApp);
@@ -51,6 +59,8 @@ export function createServer() {
         return res.status(400).json({ error: "Message et destinataire requis" });
       }
 
+      const messageStr = String(message);
+      const toStr = String(to);
       const accountSid = process.env.TWILIO_ACCOUNT_SID;
       const authToken = process.env.TWILIO_AUTH_TOKEN;
       const fromNumber = process.env.TWILIO_WHATSAPP_NUMBER;
@@ -58,9 +68,9 @@ export function createServer() {
       // Log character analysis
       if (analyzeChars) {
         console.log(`\n📊 ANALYSE CARACTÈRE PAR CARACTÈRE:`);
-        console.log(`📝 Raisage total: ${message.length} caractères`);
-        for (let i = 0; i < message.length; i++) {
-          const char = message[i];
+        console.log(`📝 Raisage total: ${messageStr.length} caractères`);
+        for (let i = 0; i < messageStr.length; i++) {
+          const char = messageStr[i];
           const code = char.charCodeAt(0);
           console.log(`[${String(i + 1).padStart(3, "0")}] "${char}" (Unicode: ${code})`);
         }
@@ -73,7 +83,7 @@ export function createServer() {
           success: true,
           messageSid: `TEST_${Date.now()}`,
           message: "Message en mode test (Twilio non configuré)",
-          charAnalysis: Array.from(message).map((char, i) => ({
+          charAnalysis: Array.from(messageStr).map((char, i) => ({
             index: i + 1,
             char,
             unicode: char.charCodeAt(0),
@@ -83,8 +93,8 @@ export function createServer() {
 
       console.log(`🔄 Envoi du message via Twilio...`);
       console.log(`De: ${fromNumber}`);
-      console.log(`À: ${to}`);
-      console.log(`Message: ${message}`);
+      console.log(`À: ${toStr}`);
+      console.log(`Message: ${messageStr}`);
 
       const response = await fetch(
         `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
@@ -98,8 +108,8 @@ export function createServer() {
           },
           body: new URLSearchParams({
             From: fromNumber,
-            To: to,
-            Body: message,
+            To: toStr,
+            Body: messageStr,
           }).toString(),
         }
       );
@@ -122,7 +132,7 @@ export function createServer() {
       res.json({
         success: true,
         messageSid,
-        charAnalysis: Array.from(message).map((char, i) => ({
+        charAnalysis: Array.from(messageStr).map((char, i) => ({
           index: i + 1,
           char,
           unicode: char.charCodeAt(0),

@@ -16,6 +16,7 @@ interface PdfDocumentProps {
   homePhone?: string;
   guardianRelationship?: string;
   additionalPhones?: string[];
+  qrCodeImageUrl?: string;
 }
 
 export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
@@ -36,11 +37,12 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
       homePhone,
       guardianRelationship,
       additionalPhones = [],
+      qrCodeImageUrl,
     },
     ref
   ) => {
     const today = new Date();
-    const formattedDate = today.toLocaleDateString("ar-MA", {
+    const formattedDate = today.toLocaleDateString("fr-FR", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -64,13 +66,16 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
       <div
         ref={ref}
         dir="rtl"
-        className="w-full bg-white p-8 text-gray-900"
         style={{
-          fontFamily: "'Arial', 'Segoe UI', sans-serif",
+          fontFamily: "'Arial', sans-serif",
           lineHeight: "1.6",
           color: "#000000",
           backgroundColor: "#ffffff",
-          // Use only HEX colors - NO oklch, oklab, or css functions
+          width: "794px",
+          padding: "32px",
+          margin: "0",
+          boxSizing: "border-box",
+          pageBreakAfter: "always",
         }}
       >
         {/* Header */}
@@ -83,17 +88,37 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
               fontSize: "28px",
               fontWeight: "bold",
               color: "#dc2626",
-              margin: "0 0 8px 0",
+              margin: "0 0 4px 0",
               fontFamily: "'Times New Roman', serif",
             }}
           >
-            الكشافة الحسنية صفي
+            Scouts Hassania Safi
           </h1>
           <p
             style={{
-              fontSize: "16px",
+              fontSize: "13px",
+              fontWeight: "600",
+              color: "#1f2937",
+              margin: "0 0 8px 0",
+            }}
+          >
+            الكشافة الحسنية صفي
+          </p>
+          <p
+            style={{
+              fontSize: "14px",
               color: "#666666",
               margin: "0",
+              fontWeight: "500",
+            }}
+          >
+            Certificat de Confirmation de Compte
+          </p>
+          <p
+            style={{
+              fontSize: "12px",
+              color: "#999999",
+              margin: "4px 0 0 0",
             }}
           >
             شهادة تأكيد الحساب
@@ -110,13 +135,13 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
         >
           <h2
             style={{
-              fontSize: "18px",
+              fontSize: "16px",
               fontWeight: "bold",
               color: "#1f2937",
               marginBottom: "12px",
             }}
           >
-            معلومات العضو
+            Informations Membres / معلومات العضو
           </h2>
 
           <div
@@ -132,11 +157,12 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
               <p
                 style={{
                   color: "#666666",
-                  fontSize: "11px",
-                  margin: "0 0 4px 0",
+                  fontSize: "10px",
+                  margin: "0 0 3px 0",
+                  fontWeight: "500",
                 }}
               >
-                الاسم الكامل
+                Nom complet / الاسم الكامل
               </p>
               <p
                 style={{
@@ -154,11 +180,12 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
               <p
                 style={{
                   color: "#666666",
-                  fontSize: "11px",
-                  margin: "0 0 4px 0",
+                  fontSize: "10px",
+                  margin: "0 0 3px 0",
+                  fontWeight: "500",
                 }}
               >
-                رقم العضو
+                Numéro Membre / رقم العضو
               </p>
               <p
                 style={{
@@ -177,11 +204,12 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
               <p
                 style={{
                   color: "#666666",
-                  fontSize: "11px",
-                  margin: "0 0 4px 0",
+                  fontSize: "10px",
+                  margin: "0 0 3px 0",
+                  fontWeight: "500",
                 }}
               >
-                معرف المستخدم
+                Identifiant Utilisateur / معرف المستخدم
               </p>
               <p
                 style={{
@@ -199,11 +227,12 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
               <p
                 style={{
                   color: "#666666",
-                  fontSize: "11px",
-                  margin: "0 0 4px 0",
+                  fontSize: "10px",
+                  margin: "0 0 3px 0",
+                  fontWeight: "500",
                 }}
               >
-                الهاتف الشخصي
+                Téléphone Personnel / الهاتف الشخصي
               </p>
               <p
                 style={{
@@ -222,11 +251,12 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
                 <p
                   style={{
                     color: "#666666",
-                    fontSize: "11px",
-                    margin: "0 0 4px 0",
+                    fontSize: "10px",
+                    margin: "0 0 3px 0",
+                    fontWeight: "500",
                   }}
                 >
-                  تاريخ الميلاد
+                  Date de Naissance / تاريخ الميلاد
                 </p>
                 <p
                   style={{
@@ -246,11 +276,12 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
                 <p
                   style={{
                     color: "#666666",
-                    fontSize: "11px",
-                    margin: "0 0 4px 0",
+                    fontSize: "10px",
+                    margin: "0 0 3px 0",
+                    fontWeight: "500",
                   }}
                 >
-                  الجنس
+                  Genre / الجنس
                 </p>
                 <p
                   style={{
@@ -259,7 +290,7 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
                     margin: "0",
                   }}
                 >
-                  {gender === "male" ? "ذكر" : "أنثى"}
+                  {gender === "male" ? "Masculin / ذكر" : "Féminin / أنثى"}
                 </p>
               </div>
             )}
@@ -270,11 +301,12 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
                 <p
                   style={{
                     color: "#666666",
-                    fontSize: "11px",
-                    margin: "0 0 4px 0",
+                    fontSize: "10px",
+                    margin: "0 0 3px 0",
+                    fontWeight: "500",
                   }}
                 >
-                  الفريق
+                  Unité / الفريق
                 </p>
                 <p
                   style={{
@@ -294,11 +326,12 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
                 <p
                   style={{
                     color: "#666666",
-                    fontSize: "11px",
-                    margin: "0 0 4px 0",
+                    fontSize: "10px",
+                    margin: "0 0 3px 0",
+                    fontWeight: "500",
                   }}
                 >
-                  الدور
+                  Rôle / الدور
                 </p>
                 <p
                   style={{
@@ -325,13 +358,13 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
           >
             <h2
               style={{
-                fontSize: "18px",
+                fontSize: "16px",
                 fontWeight: "bold",
                 color: "#1f2937",
                 marginBottom: "12px",
               }}
             >
-              معلومات الولي
+              Informations Tuteur / معلومات الولي
             </h2>
 
             <div
@@ -347,11 +380,12 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
                 <p
                   style={{
                     color: "#666666",
-                    fontSize: "11px",
-                    margin: "0 0 4px 0",
+                    fontSize: "10px",
+                    margin: "0 0 3px 0",
+                    fontWeight: "500",
                   }}
                 >
-                  اسم الولي
+                  Nom du Tuteur / اسم الولي
                 </p>
                 <p
                   style={{
@@ -370,11 +404,12 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
                   <p
                     style={{
                       color: "#666666",
-                      fontSize: "11px",
-                      margin: "0 0 4px 0",
+                      fontSize: "10px",
+                      margin: "0 0 3px 0",
+                      fontWeight: "500",
                     }}
                   >
-                    الصفة
+                    Relation / الصفة
                   </p>
                   <p
                     style={{
@@ -394,11 +429,12 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
                   <p
                     style={{
                       color: "#666666",
-                      fontSize: "11px",
-                      margin: "0 0 4px 0",
+                      fontSize: "10px",
+                      margin: "0 0 3px 0",
+                      fontWeight: "500",
                     }}
                   >
-                    هاتف الولي
+                    Téléphone Tuteur / هاتف الولي
                   </p>
                   <p
                     style={{
@@ -418,11 +454,12 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
                   <p
                     style={{
                       color: "#666666",
-                      fontSize: "11px",
-                      margin: "0 0 4px 0",
+                      fontSize: "10px",
+                      margin: "0 0 3px 0",
+                      fontWeight: "500",
                     }}
                   >
-                    الهاتف الثابت
+                    Téléphone Domicile / الهاتف الثابت
                   </p>
                   <p
                     style={{
@@ -450,13 +487,13 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
           >
             <h2
               style={{
-                fontSize: "16px",
+                fontSize: "14px",
                 fontWeight: "bold",
                 color: "#1f2937",
                 marginBottom: "12px",
               }}
             >
-              جهات الاتصال الإضافية
+              Contacts Additionnels / جهات الاتصال الإضافية
             </h2>
             <p
               style={{
@@ -471,31 +508,62 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
           </div>
         )}
 
-        {/* QR Code Data Info */}
-        <div
-          className="mb-6 p-4 rounded"
-          style={{
-            backgroundColor: "#f3f4f6",
-            borderRight: "4px solid #059669",
-          }}
-        >
-          <h2
+        {/* QR Code Section */}
+        {qrCodeImageUrl && (
+          <div
+            className="mb-6 p-4 rounded text-center"
             style={{
-              fontSize: "14px",
-              fontWeight: "bold",
-              color: "#1f2937",
-              marginBottom: "8px",
+              backgroundColor: "#f3f4f6",
+              borderRight: "4px solid #059669",
             }}
           >
-            بيانات رمز الاستجابة السريعة
-          </h2>
+            <h2
+              style={{
+                fontSize: "14px",
+                fontWeight: "bold",
+                color: "#1f2937",
+                marginBottom: "12px",
+              }}
+            >
+              Code QR / رمز الاستجابة السريعة
+            </h2>
+            <img
+              src={qrCodeImageUrl}
+              alt="QR Code"
+              style={{
+                width: "120px",
+                height: "120px",
+                border: "2px solid #1f2937",
+              }}
+            />
+            <p
+              style={{
+                margin: "8px 0 0 0",
+                fontSize: "10px",
+                color: "#666666",
+              }}
+            >
+              Scannez pour accéder aux données / امسح للوصول إلى البيانات
+            </p>
+          </div>
+        )}
+
+        {/* QR Code Data Info */}
+        <div
+          className="mb-6 p-3 rounded"
+          style={{
+            backgroundColor: "#fff3cd",
+            borderRight: "4px solid #ffc107",
+          }}
+        >
           <p
             style={{
               margin: "0",
-              fontSize: "11px",
+              fontSize: "10px",
               color: "#666666",
               wordBreak: "break-word",
               fontFamily: "monospace",
+              lineHeight: "1.4",
             }}
           >
             {qrData}
@@ -504,18 +572,18 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
 
         {/* Footer */}
         <div
-          className="border-t-2 pt-4 text-center"
+          className="border-t-2 pt-3 text-center"
           style={{
             borderColor: "#dc2626",
-            fontSize: "11px",
+            fontSize: "10px",
             color: "#666666",
           }}
         >
-          <p style={{ margin: "4px 0" }}>
-            تاريخ الإنشاء: {formattedDate}
+          <p style={{ margin: "3px 0" }}>
+            Créé le / تاريخ الإنشاء: {formattedDate}
           </p>
-          <p style={{ margin: "4px 0" }}>
-            © 2026 الكشافة الحسنية صفي - جميع الحقوق محفوظة
+          <p style={{ margin: "3px 0" }}>
+            © 2026 Scouts Hassania Safi / الكشافة الحسنية صفي
           </p>
         </div>
       </div>

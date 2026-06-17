@@ -13,7 +13,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (phone: string, generatedId: string) => Promise<void>;
+  login: (firstName: string, lastName: string, generatedId: string, password: string) => Promise<void>;
   logout: () => void;
   setAuthUser: (user: User) => void;
 }

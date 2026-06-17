@@ -6,7 +6,7 @@ import { useSidebar } from "../context/SidebarContext";
 
 interface LayoutProps {
   children: React.ReactNode;
-  currentPage?: "dashboard" | "reports" | "program" | "ideas" | "account";
+  currentPage?: "dashboard" | "reports" | "program" | "ideas" | "account" | "admin";
   showHamburger?: boolean;
 }
 

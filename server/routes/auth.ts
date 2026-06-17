@@ -1,5 +1,6 @@
 import { RequestHandler } from "express";
 import { createClient } from "@supabase/supabase-js";
+import { trimFormData, normalizePhoneNumber, trimString } from "../../shared/utils";
 
 // Create Supabase client dynamically to ensure env vars are loaded
 function getSupabaseClient() {
@@ -19,7 +20,8 @@ function getSupabaseClient() {
  */
 export const handleRegister: RequestHandler = async (req, res) => {
   try {
-    const {
+    // Clean and normalize all input data
+    let {
       first_name,
       last_name,
       birth_date,
@@ -40,18 +42,36 @@ export const handleRegister: RequestHandler = async (req, res) => {
       password,
     } = req.body;
 
+    // Trim text fields
+    first_name = trimString(first_name);
+    last_name = trimString(last_name);
+    gender = trimString(gender);
+    guardian_first_name = trimString(guardian_first_name);
+    guardian_last_name = trimString(guardian_last_name);
+    guardian_relationship = trimString(guardian_relationship);
+    guardian_relationship_other = trimString(guardian_relationship_other);
+    guardian_cin = trimString(guardian_cin);
+    additional_info = trimString(additional_info);
+    password = trimString(password);
+
+    // Normalize phone numbers
+    const normalizedUserPhone = normalizePhoneNumber(user_phone);
+    const normalizedFatherPhone = father_phone ? normalizePhoneNumber(father_phone) : null;
+    const normalizedMotherPhone = mother_phone ? normalizePhoneNumber(mother_phone) : null;
+    const normalizedHomePhone = home_phone ? normalizePhoneNumber(home_phone) : null;
+
     // Validate required fields
     if (
       !first_name ||
       !last_name ||
       !birth_date ||
       !gender ||
-      !user_phone ||
+      !normalizedUserPhone ||
       !patrol_id ||
       !role_id ||
       !password
     ) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return res.status(400).json({ error: "Missing required fields or invalid phone number" });
     }
 
     // Insert into users table
@@ -63,7 +83,7 @@ export const handleRegister: RequestHandler = async (req, res) => {
           last_name,
           birth_date,
           gender,
-          user_phone,
+          user_phone: normalizedUserPhone,
           patrol_id,
           role_id,
           is_high_patrol: is_high_patrol || false,
@@ -72,9 +92,9 @@ export const handleRegister: RequestHandler = async (req, res) => {
           guardian_relationship,
           guardian_relationship_other,
           guardian_cin,
-          father_phone,
-          mother_phone,
-          home_phone,
+          father_phone: normalizedFatherPhone,
+          mother_phone: normalizedMotherPhone,
+          home_phone: normalizedHomePhone,
           additional_info,
           password,
         },
@@ -110,7 +130,13 @@ export const handleRegister: RequestHandler = async (req, res) => {
  */
 export const handleLogin: RequestHandler = async (req, res) => {
   try {
-    const { first_name, last_name, generated_id, password } = req.body;
+    // Clean input data
+    let { first_name, last_name, generated_id, password } = req.body;
+
+    first_name = trimString(first_name);
+    last_name = trimString(last_name);
+    generated_id = trimString(generated_id);
+    password = trimString(password);
 
     // Validate required fields
     if (!first_name || !last_name || !generated_id || !password) {
@@ -135,9 +161,7 @@ export const handleLogin: RequestHandler = async (req, res) => {
       });
     }
 
-    // Verify password (simple comparison - في الإنتاج يجب استخدام bcrypt)
-    // For now, we're using a simple password check
-    // In production, passwords should be hashed
+    // Verify password
     if (password !== data.password) {
       return res.status(401).json({
         error: "كلمة المرور غير صحيحة"

@@ -1,7 +1,6 @@
 import "./global.css";
 
 import { Toaster } from "@/components/ui/toaster";
-import { createRoot } from "react-dom/client";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -16,12 +15,12 @@ import ForgotPassword from "./pages/ForgotPassword";
 import AccountConfirmation from "./pages/AccountConfirmation";
 import Dashboard from "./pages/Dashboard";
 import Reports from "./pages/Reports";
-import AddReport from "./pages/AddReport";
 import Program from "./pages/Program";
 import Ideas from "./pages/Ideas";
 import Account from "./pages/Account";
 import MyProfile from "./pages/MyProfile";
 import Sessions from "./pages/Sessions";
+import AdminDocuments from "./pages/AdminDocuments";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -67,14 +66,6 @@ const App = () => (
                 }
               />
               <Route
-                path="/add-report"
-                element={
-                  <ProtectedLayout>
-                    <AddReport />
-                  </ProtectedLayout>
-                }
-              />
-              <Route
                 path="/program"
                 element={
                   <ProtectedLayout>
@@ -114,6 +105,14 @@ const App = () => (
                   </ProtectedLayout>
                 }
               />
+              <Route
+                path="/admin/documents"
+                element={
+                  <ProtectedLayout>
+                    <AdminDocuments />
+                  </ProtectedLayout>
+                }
+              />
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
@@ -125,4 +124,4 @@ const App = () => (
   </QueryClientProvider>
 );
 
-createRoot(document.getElementById("root")!).render(<App />);
+export default App;

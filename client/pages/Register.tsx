@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
+import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
+import PasswordInput from "@/components/PasswordInput";
 import { generateMemberId } from "../lib/memberIdGenerator";
+import { trimFormData, normalizePhoneNumber } from "@shared/utils";
 
 interface PatrolOption {
   id: string;
@@ -221,30 +224,33 @@ export default function Register() {
     }
 
     try {
+      // Clean form data before sending
+      const cleanedFormData = {
+        first_name: formData.firstName.trim(),
+        last_name: formData.lastName.trim(),
+        birth_date: formData.birthDate,
+        gender: formData.gender.trim(),
+        user_phone: formData.userPhone.trim(),
+        patrol_id: formData.patrol,
+        role_id: formData.role,
+        is_high_patrol: formData.isHighPatrol,
+        guardian_first_name: formData.guardianFirstName.trim(),
+        guardian_last_name: formData.guardianLastName.trim(),
+        guardian_relationship: formData.guardianRelationship.trim(),
+        guardian_relationship_other: formData.guardianRelationshipOther.trim(),
+        guardian_cin: formData.guardianCin.trim(),
+        father_phone: formData.fatherPhone.trim(),
+        mother_phone: formData.motherPhone.trim(),
+        home_phone: formData.homePhone.trim(),
+        additional_info: formData.additionalInfo.trim(),
+        password: formData.password.trim(),
+      };
+
       // Register user in database
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          birth_date: formData.birthDate,
-          gender: formData.gender,
-          user_phone: formData.userPhone,
-          patrol_id: formData.patrol,
-          role_id: formData.role,
-          is_high_patrol: formData.isHighPatrol,
-          guardian_first_name: formData.guardianFirstName,
-          guardian_last_name: formData.guardianLastName,
-          guardian_relationship: formData.guardianRelationship,
-          guardian_relationship_other: formData.guardianRelationshipOther,
-          guardian_cin: formData.guardianCin,
-          father_phone: formData.fatherPhone,
-          mother_phone: formData.motherPhone,
-          home_phone: formData.homePhone,
-          additional_info: formData.additionalInfo,
-          password: formData.password,
-        }),
+        body: JSON.stringify(cleanedFormData),
       });
 
       if (!response.ok) {
@@ -524,7 +530,7 @@ export default function Register() {
                         setErrors((prev) => ({ ...prev, userPhone: "" }));
                       }}
                       placeholder="6xx xxx xxx"
-                      maxLength="9"
+                      maxLength={9}
                       className={`flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 ${
                         errors.userPhone ? "border-red-500" : "border-gray-300"
                       }`}
@@ -740,46 +746,29 @@ export default function Register() {
 
                 {/* Security Section */}
                 <div className="border-t-2 border-purple-200 pt-6">
-                  <h3 className="text-lg font-bold text-gray-800 mb-4">أمان الحساب</h3>
+                  <h3 className="text-lg font-bold text-gray-800 mb-4">أمان الحساب / Sécurité du Compte</h3>
 
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                      كلمة المرور <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="أدخل كلمة مرور قوية (8 أحرف على الأقل)"
-                      minLength={8}
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 ${
-                        errors.password ? "border-red-500" : "border-gray-300"
-                      }`}
+                  <div className="space-y-4">
+                    <PasswordStrengthIndicator
+                      password={formData.password}
+                      onPasswordChange={(pwd) =>
+                        setFormData((prev) => ({ ...prev, password: pwd }))
+                      }
+                      showLabel={true}
                     />
                     {errors.password && (
-                      <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+                      <p className="text-red-500 text-sm">{errors.password}</p>
                     )}
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2 mt-4">
-                      تأكيد كلمة المرور <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="password"
+                    <PasswordInput
                       name="confirmPassword"
                       value={formData.confirmPassword}
                       onChange={handleChange}
-                      placeholder="أعد كتابة كلمة المرور"
-                      minLength={8}
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 ${
-                        errors.confirmPassword ? "border-red-500" : "border-gray-300"
-                      }`}
+                      label="تأكيد كلمة المرور / Confirmer le Mot de Passe"
+                      placeholder="أعد كتابة كلمة المرور / Retapez votre mot de passe"
+                      error={errors.confirmPassword}
+                      required
                     />
-                    {errors.confirmPassword && (
-                      <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
-                    )}
                   </div>
                 </div>
 

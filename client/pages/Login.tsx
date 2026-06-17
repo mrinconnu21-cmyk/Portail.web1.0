@@ -1,7 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
+import PasswordInput from "@/components/PasswordInput";
 import { useAuth } from "@/context/AuthContext";
+import { trimFormData } from "@shared/utils";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -36,15 +39,13 @@ export default function Login() {
     }
 
     try {
+      // Clean form data before sending
+      const cleanedData = trimFormData(formData);
+
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          generated_id: formData.generated_id,
-          password: formData.password,
-        }),
+        body: JSON.stringify(cleanedData),
       });
 
       if (!response.ok) {
@@ -135,19 +136,14 @@ export default function Login() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  كلمة المرور
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="أدخل كلمة المرور"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-scout-purple"
-                />
-              </div>
+              <PasswordInput
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                label="كلمة المرور"
+                placeholder="أدخل كلمة المرور"
+                required
+              />
 
               <button
                 type="submit"
@@ -164,7 +160,7 @@ export default function Login() {
                 هل نسيت كلمة المرور؟
               </p>
               <Link
-                to="#"
+                to="/forgot-password"
                 className="block text-center text-scout-purple font-bold hover:text-purple-700 transition-colors mb-6"
               >
                 إعادة تعيين كلمة المرور
